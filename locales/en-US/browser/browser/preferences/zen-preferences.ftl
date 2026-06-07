@@ -102,6 +102,8 @@ zen-settings-workspaces-enabled =
     .label = Enable Workspaces
 zen-settings-workspaces-hide-default-container-indicator =
     .label = Hide the default container indicator in the tab bar
+zen-settings-workspaces-show-container-mismatch-indicator =
+    .label = Show an indicator on tabs that belong to a different container than their space
 
 zen-key-unsaved = Unsaved shortcut! Please save it by clicking the "Escape" key after retyping it.
 zen-key-conflict = Conflicts with { $group } -> { $shortcut }

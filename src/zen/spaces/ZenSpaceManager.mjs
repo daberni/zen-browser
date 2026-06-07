@@ -483,6 +483,53 @@ class nsZenWorkspaces {
       : 0;
   }
 
+  // Per-tab container indicator: shows each tab's container color on its right
+  // edge, and flags tabs whose container differs from the active space's
+  // container (e.g. default-container tabs sitting in a container-bound space).
+  // Zen does not set --identity-icon-color on tabs, so the color is resolved
+  // here from the contextual identity. Other spaces' tabs are hidden, so only
+  // the active space needs to be kept correct.
+  static #CONTAINER_COLORS = {
+    blue: "#37adff",
+    turquoise: "#00c79a",
+    green: "#51cd00",
+    yellow: "#ffcb00",
+    orange: "#ff9f00",
+    red: "#ff613d",
+    pink: "#ff4bda",
+    purple: "#af51f5",
+    toolbar: "currentColor",
+  };
+
+  updateTabContainerIndicators() {
+    if (!this.workspaceEnabled) {
+      return;
+    }
+    const spaceContainer = this.getCurrentSpaceContainerId();
+    const activeId = this.activeWorkspace;
+    for (const tab of gBrowser.tabs) {
+      const inActiveSpace = tab.getAttribute("zen-workspace-id") === activeId;
+      const tabContainer = Number(tab.getAttribute("usercontextid")) || 0;
+      const mismatch = inActiveSpace && tabContainer !== spaceContainer;
+      tab.toggleAttribute("zen-container-mismatch", mismatch);
+      // Only mismatched tabs need an indicator; a tab matching its space's
+      // container is unremarkable. Containered mismatches show their own
+      // identity color, default-container mismatches fall back to the neutral
+      // bar handled in CSS.
+      let color = null;
+      if (mismatch && tabContainer) {
+        const identity =
+          ContextualIdentityService.getPublicIdentityFromId(tabContainer);
+        color = nsZenWorkspaces.#CONTAINER_COLORS[identity?.color] || null;
+      }
+      if (color) {
+        tab.style.setProperty("--zen-tab-container-color", color);
+      } else {
+        tab.style.removeProperty("--zen-tab-container-color");
+      }
+    }
+  }
+
   getCurrentEssentialsContainer() {
     return this.getEssentialsSection(this.getCurrentSpaceContainerId());
   }
@@ -1700,6 +1747,7 @@ class nsZenWorkspaces {
       console.error("gZenWorkspaces: Error changing workspace", e);
     }
     this.#inChangingWorkspace = false;
+    this.updateTabContainerIndicators();
     resolve();
     return workspace;
   }

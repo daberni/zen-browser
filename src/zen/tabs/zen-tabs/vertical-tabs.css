@@ -362,10 +362,40 @@
     & .tab-background {
       overflow: hidden;
       border-radius: var(--border-radius-medium) !important;
+      position: relative;
 
+      /* Container indicator: a color bar on the tab's right edge, positioned
+         here and colored only when zen.workspaces.show-container-mismatch-indicator
+         is enabled (see below). The color is set per-tab by
+         gZenWorkspaces.updateTabContainerIndicators (Zen does not set
+         --identity-icon-color on tabs). */
       & .tab-context-line {
-        margin: 0 0 !important;
+        position: absolute !important;
+        inset-block: 20% !important;
+        inset-inline: auto 0 !important;
         width: 3px !important;
+        height: auto !important;
+        margin: 0 !important;
+        border-radius: var(--border-radius-small) 0 0 var(--border-radius-small) !important;
+        background-color: transparent !important;
+        display: block !important;
+      }
+    }
+
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media -moz-pref('zen.workspaces.show-container-mismatch-indicator') {
+      /* Containered tab whose container differs from the space: its own color. */
+      & .tab-background .tab-context-line {
+        background-color: var(--zen-tab-container-color, transparent) !important;
+      }
+
+      /* Default-container tabs that don't match the active space's container
+         have no identity color of their own, so flag them with a neutral bar. */
+      &[zen-container-mismatch]:not([usercontextid]) .tab-background .tab-context-line {
+        background-color: light-dark(
+          rgba(0, 0, 0, 0.3),
+          rgba(255, 255, 255, 0.4)
+        ) !important;
       }
     }
 

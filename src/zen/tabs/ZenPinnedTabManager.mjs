@@ -707,14 +707,35 @@ class nsZenPinnedTabManager extends nsZenDOMOperatedFeature {
       }
     );
     zenAddEssential.hidden = isEssential || !!contextTab.group;
-    document.l10n
-      .formatValue("tab-context-zen-add-essential-badge", {
-        num: gBrowser._numZenEssentials,
-        max: this.maxEssentialTabs,
-      })
-      .then(badgeText => {
-        zenAddEssential.setAttribute("badge", badgeText);
-      });
+    // When separate essentials are enabled a tab can only become an essential
+    // of its own container's section. If it belongs to a different container
+    // than the current space, surface that as the reason instead of the
+    // (misleading) count badge, which would otherwise read e.g. "0 / 12".
+    const blockedByContainer =
+      gZenWorkspaces.containerSpecificEssentials &&
+      (Number(contextTab.getAttribute("usercontextid")) || 0) !==
+        gZenWorkspaces.getCurrentSpaceContainerId();
+    if (blockedByContainer) {
+      document.l10n
+        .formatValues([
+          { id: "tab-context-zen-add-essential-other-container-badge" },
+          { id: "tab-context-zen-add-essential-other-container-tooltip" },
+        ])
+        .then(([badgeText, tooltip]) => {
+          zenAddEssential.setAttribute("badge", badgeText);
+          zenAddEssential.setAttribute("tooltiptext", tooltip);
+        });
+    } else {
+      zenAddEssential.removeAttribute("tooltiptext");
+      document.l10n
+        .formatValue("tab-context-zen-add-essential-badge", {
+          num: gBrowser._numZenEssentials,
+          max: this.maxEssentialTabs,
+        })
+        .then(badgeText => {
+          zenAddEssential.setAttribute("badge", badgeText);
+        });
+    }
     document
       .getElementById("cmd_contextZenAddToEssentials")
       .toggleAttribute("disabled", !this.canEssentialBeAdded(contextTab));

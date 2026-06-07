@@ -8,6 +8,9 @@
 - name: zen.workspaces.hide-default-container-indicator
   value: true
 
+- name: zen.workspaces.show-container-mismatch-indicator
+  value: false
+
 - name: zen.workspaces.force-container-workspace
   value: false
 

@@ -1146,6 +1146,11 @@ Preferences.addAll([
     default: true,
   },
   {
+    id: "zen.workspaces.show-container-mismatch-indicator",
+    type: "bool",
+    default: false,
+  },
+  {
     id: "zen.tab-unloader.timeout-minutes",
     type: "int",
     default: 10,
