@@ -715,6 +715,31 @@ window.gZenUIManager = {
       return button;
     };
 
+    // Make the whole toast a click target for its primary action and dismiss
+    // it on activation, in addition to any explicit button. Re-attaches on
+    // reuse so the handler points at the latest payload (e.g. the most recently
+    // opened background tab). Clicks on an inner button are left to that button.
+    const attachClick = element => {
+      if (!options.onClick) {
+        return;
+      }
+      if (element._zenToastClick) {
+        element.removeEventListener("click", element._zenToastClick);
+      }
+      element._zenToastClick = event => {
+        if (event.target.closest("button")) {
+          return;
+        }
+        options.onClick();
+        element.remove();
+        if (this._toastContainer.children.length === 0) {
+          this._toastContainer.setAttribute("hidden", true);
+        }
+      };
+      element.addEventListener("click", element._zenToastClick);
+      element.toggleAttribute("clickable", true);
+    };
+
     // Check if this message ID already exists
     for (const child of this._toastContainer.children) {
       if (child._messageId === messageId) {
@@ -728,6 +753,7 @@ window.gZenUIManager = {
           child.appendChild(button);
           child.setAttribute("button", true);
         }
+        attachClick(child);
         return [child, true];
       }
     }
@@ -750,6 +776,7 @@ window.gZenUIManager = {
     }
     wrapper.classList.add("zen-toast");
     wrapper._messageId = messageId;
+    attachClick(wrapper);
     return [wrapper, false];
   },
 

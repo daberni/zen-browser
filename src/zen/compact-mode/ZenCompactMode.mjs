@@ -977,14 +977,16 @@ window.gZenCompactModeManager = {
       !gZenGlanceManager._animating &&
       !this._nextTimeWillBeActive
     ) {
+      const selectOpenedTab = () => {
+        const targetWindow = window.parent || window;
+        targetWindow.gBrowser.selectedTab = tab;
+      };
       let messageId = "zen-background-tab-opened-toast";
       let toastOptions = {
+        onClick: selectOpenedTab,
         button: {
           id: "zen-open-background-tab-button",
-          command: () => {
-            const targetWindow = window.parent || window;
-            targetWindow.gBrowser.selectedTab = tab;
-          },
+          command: selectOpenedTab,
         },
       };
 

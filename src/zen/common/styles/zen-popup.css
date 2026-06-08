@@ -337,6 +337,14 @@ menuseparator {
     padding: var(--zen-toast-padding);
     border-radius: 10px;
     background: linear-gradient(to bottom, var(--zen-primary-color) -40%, color-mix(in srgb, var(--zen-primary-color), #0f0f0f 20%));
+
+    &[clickable] {
+      cursor: pointer;
+
+      &:hover {
+        filter: brightness(1.1);
+      }
+    }
     box-shadow: light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4)) 0 0 22px 2px;
     border: none;
     display: flex;
