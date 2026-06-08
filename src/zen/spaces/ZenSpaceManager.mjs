@@ -483,12 +483,8 @@ class nsZenWorkspaces {
       : 0;
   }
 
-  // Per-tab container indicator: shows each tab's container color on its right
-  // edge, and flags tabs whose container differs from the active space's
-  // container (e.g. default-container tabs sitting in a container-bound space).
-  // Zen does not set --identity-icon-color on tabs, so the color is resolved
-  // here from the contextual identity. Other spaces' tabs are hidden, so only
-  // the active space needs to be kept correct.
+  // Canonical Firefox contextual-identity colors (mirrors usercontext.css),
+  // since Zen doesn't set --identity-icon-color on tabs.
   static #CONTAINER_COLORS = {
     blue: "#37adff",
     turquoise: "#00c79a",
@@ -501,31 +497,41 @@ class nsZenWorkspaces {
     toolbar: "currentColor",
   };
 
+  // Flag tabs in the active space whose container differs from the space's, so
+  // the per-tab indicator can show the mismatch. Runs on every tab refresh, so
+  // it bails immediately when the feature is off and only writes on change.
   updateTabContainerIndicators() {
-    if (!this.workspaceEnabled) {
+    if (
+      !this.workspaceEnabled ||
+      !Services.prefs.getBoolPref(
+        "zen.workspaces.show-container-mismatch-indicator",
+        false
+      )
+    ) {
       return;
     }
     const spaceContainer = this.getCurrentSpaceContainerId();
     const activeId = this.activeWorkspace;
     for (const tab of gBrowser.tabs) {
-      const inActiveSpace = tab.getAttribute("zen-workspace-id") === activeId;
       const tabContainer = Number(tab.getAttribute("usercontextid")) || 0;
-      const mismatch = inActiveSpace && tabContainer !== spaceContainer;
-      tab.toggleAttribute("zen-container-mismatch", mismatch);
-      // Only mismatched tabs need an indicator; a tab matching its space's
-      // container is unremarkable. Containered mismatches show their own
-      // identity color, default-container mismatches fall back to the neutral
-      // bar handled in CSS.
-      let color = null;
+      const mismatch =
+        tab.getAttribute("zen-workspace-id") === activeId &&
+        tabContainer !== spaceContainer;
+      if (tab.hasAttribute("zen-container-mismatch") !== mismatch) {
+        tab.toggleAttribute("zen-container-mismatch", mismatch);
+      }
+      let color = "";
       if (mismatch && tabContainer) {
         const identity =
           ContextualIdentityService.getPublicIdentityFromId(tabContainer);
-        color = nsZenWorkspaces.#CONTAINER_COLORS[identity?.color] || null;
+        color = nsZenWorkspaces.#CONTAINER_COLORS[identity?.color] || "";
       }
-      if (color) {
-        tab.style.setProperty("--zen-tab-container-color", color);
-      } else {
-        tab.style.removeProperty("--zen-tab-container-color");
+      if (tab.style.getPropertyValue("--zen-tab-container-color") !== color) {
+        if (color) {
+          tab.style.setProperty("--zen-tab-container-color", color);
+        } else {
+          tab.style.removeProperty("--zen-tab-container-color");
+        }
       }
     }
   }
@@ -2664,6 +2670,7 @@ class nsZenWorkspaces {
       ],
       forAnimation
     );
+    this.updateTabContainerIndicators();
   }
 
   updateShouldHideSeparator(
