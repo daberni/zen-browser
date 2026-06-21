@@ -211,7 +211,7 @@ class nsZenEmojiPicker extends nsZenDOMOperatedFeature {
     if (allowEmojis) {
       this.searchInput.focus({ preventScroll: true });
     }
-    this.#changePage(false, { animate: false });
+    // this.#changePage(false, { animate: false });
   }
 
   #onPopupHidden(event) {
