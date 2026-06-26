@@ -756,28 +756,10 @@
     handle_spaceIconDragOver(event) {
       const dt = event.dataTransfer;
       const draggedTab = dt.mozGetDataAt(TAB_DROP_TYPE, 0);
-      if (draggedTab.hasAttribute("zen-essential")) {
-        return;
-      }
-      const target = event.target;
-      const spaceId = target.getAttribute("zen-workspace-id");
-      if (!spaceId) {
-        return;
-      }
-      this.clearDragOverVisuals();
-      const currentSpaceId = gZenWorkspaces.activeWorkspace;
-      if (spaceId === currentSpaceId || gZenWorkspaces._animatingChange) {
-        return;
-      }
-      gZenWorkspaces.changeWorkspaceWithID(spaceId).then(spaceChanged => {
-        this.#onSpaceChanged(spaceChanged, dt);
-      });
-    }
-
-    #handle_spaceIconDrop(event) {
-      const dt = event.dataTransfer;
-      const draggedTab = dt.mozGetDataAt(TAB_DROP_TYPE, 0);
-      if (!isTab(draggedTab) || draggedTab.hasAttribute("zen-essential")) {
+      if (
+        (!isTab(draggedTab) && !isTabGroupLabel(draggedTab)) ||
+        draggedTab.hasAttribute("zen-essential")
+      ) {
         return;
       }
       const spaceId = event.target
@@ -786,14 +768,52 @@
       if (!spaceId) {
         return;
       }
+      // A drop only fires after dragover calls preventDefault; declare the icon
+      // a drop target and show the move affordance.
+      event.preventDefault();
+      dt.dropEffect = "move";
+      this.clearDragOverVisuals();
+      if (
+        spaceId === gZenWorkspaces.activeWorkspace ||
+        gZenWorkspaces._animatingChange
+      ) {
+        return;
+      }
+      gZenWorkspaces.changeWorkspaceWithID(spaceId).then(spaceChanged => {
+        this.#onSpaceChanged(spaceChanged, dt);
+      });
+    }
+
+    #handle_spaceIconDrop(event) {
+      const draggedTab = event.dataTransfer.mozGetDataAt(TAB_DROP_TYPE, 0);
+      if (
+        (!isTab(draggedTab) && !isTabGroupLabel(draggedTab)) ||
+        draggedTab.hasAttribute("zen-essential")
+      ) {
+        return;
+      }
+      const spaceId = event.target
+        .closest("[zen-workspace-id]")
+        ?.getAttribute("zen-workspace-id");
+      // Cross-window drags aren't handled here, matching #handle_dropSwitchSpace.
+      if (!spaceId || draggedTab.documentGlobal !== window) {
+        return;
+      }
+      event.preventDefault();
       this.clearSpaceSwitchTimer();
       this.clearDragOverVisuals();
+      // dragend skips its compact-mode hover reset for a move drop, and this
+      // drop bypasses the tab strip's handle_drop, so clear it here.
+      requestAnimationFrame(() => gZenCompactModeManager?._clearAllHoverStates());
+
+      if (isTabGroupLabel(draggedTab)) {
+        gZenFolders.changeFolderToSpace(draggedTab.group, spaceId);
+        return;
+      }
       const movingTabs = draggedTab._dragData?.movingTabs || [draggedTab];
       const place = () => {
         gZenWorkspaces.moveTabsToWorkspace(movingTabs, spaceId);
-        if (draggedTab.ownerGlobal === window) {
-          gBrowser.selectedTab = draggedTab;
-        }
+        gBrowser.selectedTab = draggedTab;
         gZenWorkspaces.updateTabsContainers();
       };
       if (spaceId === gZenWorkspaces.activeWorkspace) {
