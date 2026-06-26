@@ -735,6 +735,22 @@ class nsZenPinnedTabManager extends nsZenDOMOperatedFeature {
       !gZenVerticalTabsManager._prefsSidebarExpanded;
   }
 
+  // Adopts a tab dragged from another window into this one, optionally assigning
+  // it to `workspaceId` and placing it at `elementIndex`. Picks a tab to blur to
+  // in the source window first. Returns the adopted tab (or null on failure).
+  adoptTabToWorkspace(tab, { draggedTab, movingTabs, workspaceId, elementIndex } = {}) {
+    if (workspaceId) {
+      tab.documentGlobal.gBrowser.selectedTab =
+        tab.documentGlobal.gBrowser._findTabToBlurTo(tab, movingTabs);
+      tab.documentGlobal.gZenWorkspaces.moveTabToWorkspace(tab, workspaceId);
+    }
+    return gBrowser.adoptTab(tab, {
+      elementIndex,
+      selectTab: tab === draggedTab,
+      spaceId: workspaceId,
+    });
+  }
+
   // eslint-disable-next-line complexity
   moveToAnotherTabContainerIfNecessary(
     event,
@@ -759,20 +775,13 @@ class nsZenPinnedTabManager extends nsZenDOMOperatedFeature {
         }
         if (tab.documentGlobal !== window) {
           fromDifferentWindow = true;
-          if (workspaceId) {
-            tab.documentGlobal.gBrowser.selectedTab =
-              tab.documentGlobal.gBrowser._findTabToBlurTo(tab, movingTabs);
-            tab.documentGlobal.gZenWorkspaces.moveTabToWorkspace(
-              tab,
-              workspaceId
-            );
-          }
           // Move the tabs into this window. To avoid multiple tab-switches in
           // the original window, the selected tab should be adopted last.
-          tab = gBrowser.adoptTab(tab, {
+          tab = this.adoptTabToWorkspace(tab, {
+            draggedTab,
+            movingTabs,
+            workspaceId,
             elementIndex: newIndex,
-            selectTab: tab == draggedTab,
-            spaceId: workspaceId,
           });
           if (tab) {
             ++newIndex;

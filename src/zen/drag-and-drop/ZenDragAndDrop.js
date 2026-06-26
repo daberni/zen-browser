@@ -795,8 +795,7 @@
       const spaceId = event.target
         .closest("[zen-workspace-id]")
         ?.getAttribute("zen-workspace-id");
-      // Cross-window drags aren't handled here, matching #handle_dropSwitchSpace.
-      if (!spaceId || draggedTab.documentGlobal !== window) {
+      if (!spaceId) {
         return;
       }
       event.preventDefault();
@@ -806,14 +805,44 @@
       // drop bypasses the tab strip's handle_drop, so clear it here.
       requestAnimationFrame(() => gZenCompactModeManager?._clearAllHoverStates());
 
+      // Folders are moved in place; cross-window folders aren't supported here.
       if (isTabGroupLabel(draggedTab)) {
-        gZenFolders.changeFolderToSpace(draggedTab.group, spaceId);
+        if (draggedTab.documentGlobal === window) {
+          gZenFolders.changeFolderToSpace(draggedTab.group, spaceId);
+        }
         return;
       }
-      const movingTabs = draggedTab._dragData?.movingTabs || [draggedTab];
+      let movingTabs = draggedTab._dragData?.movingTabs || [draggedTab];
+      let droppedTab = draggedTab;
       const place = () => {
+        // Dropping on an icon is just a move without an explicit position: adopt
+        // any cross-window tabs (reusing the tab-strip drop helper), then append
+        // them to the target space.
+        if (droppedTab.documentGlobal !== window) {
+          const source = droppedTab;
+          movingTabs = movingTabs.map(tab => {
+            if (
+              !isTab(tab) ||
+              tab.hasAttribute("zen-essential") ||
+              tab.documentGlobal === window
+            ) {
+              return tab;
+            }
+            const adopted = gZenPinnedTabManager.adoptTabToWorkspace(tab, {
+              draggedTab: source,
+              movingTabs,
+              workspaceId: spaceId,
+            });
+            if (tab === source && adopted) {
+              droppedTab = adopted;
+            }
+            return adopted ?? tab;
+          });
+        }
         gZenWorkspaces.moveTabsToWorkspace(movingTabs, spaceId);
-        gBrowser.selectedTab = draggedTab;
+        if (droppedTab.documentGlobal === window) {
+          gBrowser.selectedTab = droppedTab;
+        }
         gZenWorkspaces.updateTabsContainers();
       };
       if (spaceId === gZenWorkspaces.activeWorkspace) {
