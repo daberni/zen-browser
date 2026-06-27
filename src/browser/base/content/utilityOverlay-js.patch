@@ -1,0 +1,48 @@
+diff --git a/browser/base/content/utilityOverlay.js b/browser/base/content/utilityOverlay.js
+index e692f340a0fb20c785507e5728c8ee9d5a7e011d..0276f46e7b7cc7504db27dc5120071515d604a8b 100644
+--- a/browser/base/content/utilityOverlay.js
++++ b/browser/base/content/utilityOverlay.js
+@@ -180,7 +180,7 @@ function createUserContextMenu(
+   {
+     isContextMenu = false,
+     excludeUserContextId = 0,
+-    showDefaultTab = false,
++    showDefaultTab = true,
+     useAccessKeys = true,
+   } = {}
+ ) {
+@@ -191,7 +191,7 @@ function createUserContextMenu(
+   MozXULElement.insertFTLIfNeeded("toolkit/global/contextual-identity.ftl");
+   let docfrag = document.createDocumentFragment();
+ 
+-  // If we are excluding a userContextId, we want to add a 'no-container' item.
++  // If a current container is set, we want to add a 'no-container' item.
+   if (excludeUserContextId || showDefaultTab) {
+     let menuitem = document.createXULElement("menuitem");
+     if (useAccessKeys) {
+@@ -202,6 +202,9 @@ function createUserContextMenu(
+       menuitem.setAttribute("label", label);
+     }
+     menuitem.setAttribute("data-usercontextid", "0");
++    if (!excludeUserContextId) {
++      menuitem.setAttribute("checked", "true");
++    }
+     if (!isContextMenu) {
+       menuitem.setAttribute("command", "Browser:NewUserContextTab");
+     }
+@@ -213,12 +216,11 @@ function createUserContextMenu(
+   }
+ 
+   ContextualIdentityService.getPublicIdentities().forEach(identity => {
+-    if (identity.userContextId == excludeUserContextId) {
+-      return;
+-    }
+-
+     let menuitem = document.createXULElement("menuitem");
+     menuitem.setAttribute("data-usercontextid", identity.userContextId);
++    if (identity.userContextId == excludeUserContextId) {
++      menuitem.setAttribute("checked", "true");
++    }
+     if (identity.name) {
+       menuitem.setAttribute("label", identity.name);
+     } else if (useAccessKeys) {

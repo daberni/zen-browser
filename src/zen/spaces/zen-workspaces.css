@@ -268,6 +268,31 @@
     }
   }
 
+  .zen-current-workspace-indicator-container-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    /* Match the muted gray of the workspace switcher icons at the bottom. */
+    -moz-context-properties: fill-opacity, fill;
+    fill: currentColor;
+    fill-opacity: 0.6;
+    filter: grayscale(1);
+    opacity: 0.7;
+  }
+
+  /* The container icon and the more-menu share the same spot: show the icon at
+     rest, hide it whenever the more-menu is revealed. */
+  :root[zen-unsynced-window='true']
+    #navigator-toolbox[zen-has-implicit-hover='true']
+    & .zen-current-workspace-indicator-container-icon,
+  :root:not([zen-unsynced-window])
+    &:hover
+    .zen-current-workspace-indicator-container-icon,
+  &:has(.zen-workspaces-actions[open='true'])
+    .zen-current-workspace-indicator-container-icon {
+    display: none;
+  }
+
   .zen-workspaces-actions {
     margin-left: auto !important;
     transition: opacity 0.1s;

@@ -1983,6 +1983,30 @@ class nsZenWorkspaces {
       indicatorIcon.textContent = icon;
     }
     indicatorName.textContent = currentWorkspace.name;
+
+    const containerIcon = workspaceIndicator.querySelector(
+      ".zen-current-workspace-indicator-container-icon"
+    );
+    const containerId = currentWorkspace.containerTabId;
+    const identity = containerId
+      ? ContextualIdentityService.getPublicIdentityFromId(containerId)
+      : null;
+    containerIcon.className = "zen-current-workspace-indicator-container-icon";
+    if (identity) {
+      containerIcon.classList.add(
+        "userContext-icon",
+        `identity-icon-${identity.icon}`,
+        `identity-color-${identity.color}`
+      );
+      containerIcon.setAttribute(
+        "tooltiptext",
+        ContextualIdentityService.getUserContextLabel(containerId)
+      );
+      containerIcon.removeAttribute("hidden");
+    } else {
+      containerIcon.removeAttribute("tooltiptext");
+      containerIcon.setAttribute("hidden", "true");
+    }
   }
 
   _fixIndicatorsNames(workspaces) {

@@ -300,6 +300,7 @@ class nsZenWorkspaceCreation extends MozXULElement {
     return window.createUserContextMenu(event, {
       isContextMenu: true,
       showDefaultTab: true,
+      excludeUserContextId: this.currentProfile || 0,
     });
   }
 
